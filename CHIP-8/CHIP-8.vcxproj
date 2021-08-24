@@ -140,6 +140,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="chip8.c" />
+    <ClCompile Include="cpu.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cpu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
