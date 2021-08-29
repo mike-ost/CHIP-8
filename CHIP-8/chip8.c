@@ -13,36 +13,31 @@
 #endif
 
 //#include "cpu.h"
+#include "inc/display.h"
+#include "inc/font.h"
 
 #define DISPLAY_HEIGHT 64
 #define DISPLAY_WIDTH 32
 
+
+/* void reset_display(unsigned char *display, int size) {
+
+	for (int x = 0; x < size; x++) {
+		*display = 0;
+		//printf("Value of var_arr[%d] is: %d \n", x, *display);
+		display++;
+	}
+
+} */
+
 int main()
 {
 
-	unsigned char fontSet[80] = {
-		0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-		0x20, 0x60, 0x20, 0x20, 0x70, // 1
-		0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-		0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-		0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-		0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-		0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-		0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-		0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-		0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-		0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-		0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-		0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-		0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-		0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-		0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-	};
 
 	unsigned short opCode = 0;
 
 	//4 kb of memory
-	unsigned char memory[4095] = {0};
+	unsigned char memory[4096] = {0};
 
 	unsigned char registers[16] = {0};
 	unsigned char stack[16] = {0};
@@ -54,16 +49,31 @@ int main()
 	unsigned char soundTimer = 0;
 
 	unsigned char display[DISPLAY_HEIGHT * DISPLAY_WIDTH] = {0};
+	//unsigned char *displayP[sizeof(display)];
+
+
 
 	//keep state of keys pressed. 0 = not pressed, 1 = pressed
 	unsigned char keys[16] = {0};
 
+
+
+/* 	int e = 0;
+	for (e = 0; e < sizeof(display); e++)
+	{
+		displayP[e] = &display[e];
+		//printf("%d\n", display[e]);
+	} */
+
+	//reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 	//write fontset to memory
-	int x = 0;
-	for (x = 0; x < 80; x++)
+	load_font(memory);
+	init_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
+
+/* 	for (int x = 0; x < 80; x++)
 	{
 		memory[x] = fontSet[x];
-	}
+	} */
 
 	//Read rom
 	unsigned char buffer[3583] = {0};
@@ -83,7 +93,7 @@ int main()
 
 	fclose(fptr);
 
-	for (x = 0; x < sizeof(buffer); x++)
+	for (int x = 0; x < sizeof(buffer); x++)
 	{
 		memory[x + 512] = buffer[x];
 	}
@@ -124,6 +134,11 @@ int main()
 			if (i != 0)
 			{
 				printf("0");
+			}
+
+			if(i == 0x0E0) {
+				printf("reset_display");
+				reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 			}
 
 			break;
