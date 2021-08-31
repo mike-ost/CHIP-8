@@ -1,0 +1,13 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#define DISPLAY_HEIGHT 64
+#define DISPLAY_WIDTH 32
+
+#define ADDRESS_ROM_START 0x200
+#define RAM_SIZE 0x1000
+#define REGISTER_SIZE 0x10
+#define STACK_SIZE 0x10
+#define NUMBER_OF_KEYS 0x10
+
+#endif

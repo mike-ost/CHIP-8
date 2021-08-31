@@ -2,6 +2,4 @@
 
 void init_cpu() {
 
-
-
 }

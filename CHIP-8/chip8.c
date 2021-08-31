@@ -12,12 +12,13 @@
 #include <unistd.h>
 #endif
 
-//#include "cpu.h"
+#include "inc/chip8.h"
+#include "inc/cpu.h"
 #include "inc/display.h"
 #include "inc/font.h"
+#include "inc/loadrom.h"
 
-#define DISPLAY_HEIGHT 64
-#define DISPLAY_WIDTH 32
+//#define ADDRESS_ROM_START 0x200
 
 
 /* void reset_display(unsigned char *display, int size) {
@@ -32,15 +33,15 @@
 
 int main()
 {
-
+	//printf("%d\n", DISPLAY_HEIGHT);
 
 	unsigned short opCode = 0;
 
 	//4 kb of memory
-	unsigned char memory[4096] = {0};
+	unsigned char memory[RAM_SIZE] = {0};
 
-	unsigned char registers[16] = {0};
-	unsigned char stack[16] = {0};
+	unsigned char registers[REGISTER_SIZE] = {0};
+	unsigned char stack[STACK_SIZE] = {0};
 
 	unsigned short i = 0;
 	unsigned short pc = 0;
@@ -48,13 +49,12 @@ int main()
 	unsigned char delayTimer = 0;
 	unsigned char soundTimer = 0;
 
+
 	unsigned char display[DISPLAY_HEIGHT * DISPLAY_WIDTH] = {0};
 	//unsigned char *displayP[sizeof(display)];
 
-
-
 	//keep state of keys pressed. 0 = not pressed, 1 = pressed
-	unsigned char keys[16] = {0};
+	unsigned char keys[NUMBER_OF_KEYS] = {0};
 
 
 
@@ -68,6 +68,7 @@ int main()
 	//reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 	//write fontset to memory
 	load_font(memory);
+	load_rom(&memory[ADDRESS_ROM_START]);
 	init_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 
 /* 	for (int x = 0; x < 80; x++)
@@ -76,7 +77,7 @@ int main()
 	} */
 
 	//Read rom
-	unsigned char buffer[3583] = {0};
+/* 	unsigned char buffer[3584] = {0};
 	FILE *fptr;
 	errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\ibm.ch8", "rb");
 
@@ -96,12 +97,12 @@ int main()
 	for (int x = 0; x < sizeof(buffer); x++)
 	{
 		memory[x + 512] = buffer[x];
-	}
+	} */
 
 	//unsigned char byte0 = 0;
 	//unsigned char byte1 = 0;
 
-	pc = 0x200;
+	pc = ADDRESS_ROM_START;
 
 	while (1)
 	{
@@ -118,7 +119,7 @@ int main()
 
 		if (pc > 4094)
 		{
-			pc = 511;
+			pc = ADDRESS_ROM_START;
 		}
 
 		//unsigned short temp0 = 0;
@@ -149,11 +150,13 @@ int main()
 		case 0x2000:
 			printf("2");
 			break;
-		case 0x6000:
+		case 0x6000:;
 			printf("6");
+			registers[(i & 0x0F00) >> 8] = i & 0x00FF;
 			break;
 		case 0x7000:
 			printf("7");
+			registers[(i & 0x0F00) >> 8] += i & 0x00FF;
 			break;
 		case 0xA000:
 			printf("A");
