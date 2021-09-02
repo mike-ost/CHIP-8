@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 .vscode
 chip8.exe
+CHIP-8/SDL2.dll
+CHIP-8/x.bmp

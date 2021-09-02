@@ -5,6 +5,7 @@
 
 //#include <stdio.h>
 #include <errno.h>
+//#include <SDL.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -17,6 +18,7 @@
 #include "inc/display.h"
 #include "inc/font.h"
 #include "inc/loadrom.h"
+#include <SDL.h>
 
 //#define ADDRESS_ROM_START 0x200
 
@@ -29,9 +31,92 @@
 	}
 
 } */
+//The window we'll be rendering to
+SDL_Window *window = NULL;
 
-int main()
+//The surface contained by the window
+SDL_Surface *screenSurface = NULL;
+
+//The image we will load and show on the screen
+SDL_Surface *gXOut = NULL;
+
+
+unsigned char init() {
+
+	unsigned char success = 1;
+
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		success = 0;
+	}
+	else
+	{
+		//Create window
+		window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+		if (window == NULL)
+		{
+			printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+			success = 0;
+		}
+
+		else
+		{
+			//Get window surface
+			screenSurface = SDL_GetWindowSurface(window);
+
+			//Fill the surface white
+			//SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
+
+			//Update the surface
+			//SDL_UpdateWindowSurface(window);
+
+			//Wait two seconds
+			//SDL_Delay( 2000 );
+		}
+	}
+
+	return success;
+}
+
+void close()
 {
+	//Deallocate surface
+	//SDL_FreeSurface(gXOut);
+
+	//Destroy window
+	SDL_DestroyWindow(window);
+	window = NULL;
+
+	//Quit SDL subsystems
+	SDL_Quit();
+}
+
+unsigned char loadMedia() {
+
+	unsigned char success = 1;
+
+	gXOut = SDL_LoadBMP("x.bmp");
+
+	if(gXOut == NULL) {
+		printf( "Unable to load image %s! SDL Error: %s\n", "x.bmp", SDL_GetError() );
+		success = 0;
+	}
+
+	return success;
+}
+
+int main(int argc, char *args[])
+{
+
+	if(init() == 0) {
+		return 0;
+	}
+
+	if(loadMedia() == 0) {
+		return 0;
+	}
+
 	//printf("%d\n", DISPLAY_HEIGHT);
 
 	unsigned short opCode = 0;
@@ -53,6 +138,19 @@ int main()
 
 	//keep state of keys pressed. 0 = not pressed, 1 = pressed
 	unsigned char keys[NUMBER_OF_KEYS] = {0};
+
+	unsigned char quit = 0;
+
+	SDL_Event e;
+
+	//Initialize SDL
+
+
+	//Destroy window
+	//SDL_DestroyWindow( window );
+
+	//Quit SDL subsystems§§
+	//SDL_Quit();
 
 	/* 	int e = 0;
 	for (e = 0; e < sizeof(display); e++)
@@ -100,8 +198,20 @@ int main()
 
 	pc = ADDRESS_ROM_START;
 
-	while (1)
+	while (quit == 0)
 	{
+
+		while(SDL_PollEvent(&e) != 0) {
+			if( e.type == SDL_QUIT) {
+				quit = 1;
+			}
+		}
+
+		//Apply the image. BACK BUFFER
+		SDL_BlitSurface(gXOut, NULL, screenSurface, NULL);
+
+		//Update the surface FRONT BUFFER
+		SDL_UpdateWindowSurface(window);
 
 		//byte0 = memory[pc];		//162
 		//byte1 = memory[pc + 1]; //42
@@ -161,7 +271,7 @@ int main()
 			break;
 		case 0xD000:;
 			printf("D");
-continue;
+			continue;
 			unsigned char x = 0;
 			unsigned char y = 0;
 			unsigned char height = 0;
@@ -174,15 +284,13 @@ continue;
 			y = registers[y] % 32;
 
 			registers[0xF] = 0;
-			for(int yLine = 0; yLine < height; yLine++) {
-				pixel = memory[i+yLine];
+			for (int yLine = 0; yLine < height; yLine++)
+			{
+				pixel = memory[i + yLine];
 
-				for (int xLine = 0; xLine < 8; xLine++) {
-
-					
+				for (int xLine = 0; xLine < 8; xLine++)
+				{
 				}
-
-
 
 				continue;
 			}
@@ -240,5 +348,6 @@ f300 e300 43e0 00e0 0080 0080 0080 0080
 
 	printf("EXIT");
 
+	close();
 	return 0;
 }
