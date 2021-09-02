@@ -5,7 +5,6 @@
 
 //#include <stdio.h>
 #include <errno.h>
-#include <SDL.h>
 
 #ifdef _WIN32
 #include <Windows.h>
