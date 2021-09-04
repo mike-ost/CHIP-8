@@ -6,7 +6,7 @@
 void load_rom(unsigned char *memory)
 {
     unsigned char buffer[3584] = {0};
-printf("%d\n", STACK_SIZE);
+    //printf("%d\n", STACK_SIZE);
     //Read rom
     FILE *fptr;
     errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\ibm.ch8", "rb");

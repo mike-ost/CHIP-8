@@ -1,11 +1,6 @@
 #include <stdio.h>
-//#include <stdlib.h>
-//#include <limits.h>
-//#include <float.h>
-
-//#include <stdio.h>
 #include <errno.h>
-//#include <SDL.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -20,17 +15,7 @@
 #include "inc/loadrom.h"
 #include <SDL.h>
 
-//#define ADDRESS_ROM_START 0x200
 
-/* void reset_display(unsigned char *display, int size) {
-
-	for (int x = 0; x < size; x++) {
-		*display = 0;
-		//printf("Value of var_arr[%d] is: %d \n", x, *display);
-		display++;
-	}
-
-} */
 //The window we'll be rendering to
 SDL_Window *window = NULL;
 
@@ -40,8 +25,11 @@ SDL_Surface *screenSurface = NULL;
 //The image we will load and show on the screen
 SDL_Surface *gXOut = NULL;
 
+// struct that handles all rendering
+SDL_Renderer *renderer;
 
-unsigned char init() {
+unsigned char initSDL()
+{
 
 	unsigned char success = 1;
 
@@ -53,37 +41,25 @@ unsigned char init() {
 	else
 	{
 		//Create window
-		window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+		//window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+		window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64 * 8, 32 * 8, 0);
 		if (window == NULL)
 		{
 			printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = 0;
 		}
-
 		else
 		{
-			//Get window surface
-			screenSurface = SDL_GetWindowSurface(window);
 
-			//Fill the surface white
-			//SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-
-			//Update the surface
-			//SDL_UpdateWindowSurface(window);
-
-			//Wait two seconds
-			//SDL_Delay( 2000 );
+			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 		}
 	}
 
 	return success;
 }
 
-void close()
+void closeSDL()
 {
-	//Deallocate surface
-	//SDL_FreeSurface(gXOut);
-
 	//Destroy window
 	SDL_DestroyWindow(window);
 	window = NULL;
@@ -92,32 +68,64 @@ void close()
 	SDL_Quit();
 }
 
-unsigned char loadMedia() {
+unsigned char loadMedia()
+{
 
 	unsigned char success = 1;
 
 	gXOut = SDL_LoadBMP("x.bmp");
 
-	if(gXOut == NULL) {
-		printf( "Unable to load image %s! SDL Error: %s\n", "x.bmp", SDL_GetError() );
+	if (gXOut == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "x.bmp", SDL_GetError());
 		success = 0;
 	}
 
 	return success;
 }
 
+void draw(unsigned char *display)
+{
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+	// clear the current rendering target with the drawing color
+	SDL_RenderClear(renderer);
+
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+	// iterating thru the display (64*32)
+	//line
+	for (int y = 0; y < 32; y++)
+	{
+		//column
+		for (int x = 0; x < 64; x++)
+		{
+			//line 2 column 0 128+0
+			if (display[x + (y * 64)])
+			{
+				SDL_Rect rect;
+
+				rect.x = x * 8;
+				rect.y = y * 8;
+				rect.w = 8;
+				rect.h = 8;
+
+				SDL_RenderFillRect(renderer, &rect);
+			}
+		}
+	}
+
+	// update the screen
+	SDL_RenderPresent(renderer);
+}
+
 int main(int argc, char *args[])
 {
 
-	if(init() == 0) {
+	if (initSDL() == 0)
+	{
 		return 0;
 	}
-
-	if(loadMedia() == 0) {
-		return 0;
-	}
-
-	//printf("%d\n", DISPLAY_HEIGHT);
 
 	unsigned short opCode = 0;
 
@@ -134,93 +142,53 @@ int main(int argc, char *args[])
 	unsigned char soundTimer = 0;
 
 	unsigned char display[DISPLAY_HEIGHT * DISPLAY_WIDTH] = {0};
-	//unsigned char *displayP[sizeof(display)];
 
 	//keep state of keys pressed. 0 = not pressed, 1 = pressed
 	unsigned char keys[NUMBER_OF_KEYS] = {0};
+
+	unsigned char drawFlag = 0;
 
 	unsigned char quit = 0;
 
 	SDL_Event e;
 
-	//Initialize SDL
-
-
-	//Destroy window
-	//SDL_DestroyWindow( window );
-
-	//Quit SDL subsystems§§
-	//SDL_Quit();
-
-	/* 	int e = 0;
-	for (e = 0; e < sizeof(display); e++)
-	{
-		displayP[e] = &display[e];
-		//printf("%d\n", display[e]);
-	} */
-
-	//reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 	//write fontset to memory
 	load_font(memory);
 	load_rom(&memory[ADDRESS_ROM_START]);
 	init_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 
-	/* 	for (int x = 0; x < 80; x++)
-	{
-		memory[x] = fontSet[x];
-	} */
-
-	//Read rom
-	/* 	unsigned char buffer[3584] = {0};
-	FILE *fptr;
-	errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\ibm.ch8", "rb");
-
-	if (err || fptr == NULL)
-	{
-		printf("FILE ERROR!");
-		return 0;
-	}
-	else
-	{
-		//fread_s(buffer, sizeof(buffer), 1, sizeof(buffer), fptr);
-		fread(buffer, sizeof(buffer), 1, fptr);
-	}
-
-	fclose(fptr);
-
-	for (int x = 0; x < sizeof(buffer); x++)
-	{
-		memory[x + 512] = buffer[x];
-	} */
-
-	//unsigned char byte0 = 0;
-	//unsigned char byte1 = 0;
-
 	pc = ADDRESS_ROM_START;
+
+	unsigned short x;
+	unsigned short y;
 
 	while (quit == 0)
 	{
 
-		while(SDL_PollEvent(&e) != 0) {
-			if( e.type == SDL_QUIT) {
+		while (SDL_PollEvent(&e) != 0)
+		{
+			if (e.type == SDL_QUIT)
+			{
 				quit = 1;
 			}
 		}
 
-		//Apply the image. BACK BUFFER
-		SDL_BlitSurface(gXOut, NULL, screenSurface, NULL);
 
-		//Update the surface FRONT BUFFER
-		SDL_UpdateWindowSurface(window);
+		drawFlag = 0;
 
-		//byte0 = memory[pc];		//162
-		//byte1 = memory[pc + 1]; //42
-
-		//opCode = byte0;
-
+		//Each opcode is 2 bytes. Read 2 bytes from memory and combine
 		opCode = (memory[pc] << 8) | memory[pc + 1]; //41514
 													 //opCode = (byte0 << 8); //41514
 
+		// Vx register, we are basically "grabbing" the x present in some
+		// instructions like 3XNN
+		x = (opCode & 0x0F00) >> 8;
+
+		// Vy register, we are basically "grabbing" the y present in some
+		// instructions like 5XY0
+		y = (opCode & 0x00F0) >> 4;
+
+		//Iterate program counter
 		pc = pc + 2;
 
 		if (pc > 4094)
@@ -228,29 +196,18 @@ int main(int argc, char *args[])
 			pc = ADDRESS_ROM_START;
 		}
 
-		//unsigned short temp0 = 0;
-
-		//i = opCode & 0x0FFF;
-		//temp0 = opCode & 0xF000;
-
 		switch (opCode & 0xF000)
 		{
-		case 0x0000:;
-			//int test1 = 1;
-
-			/* 			if (i != 0)
-			{
-				printf("0");
-			} */
-
+		case 0x0000:
 			if (opCode == 0x0E0)
 			{
+				drawFlag = 1;
 				printf("reset_display");
 				reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 			}
 
 			break;
-		case 0x1000:
+		case 0x1000: // jump to pc
 			printf("1");
 			pc = opCode & 0x0FFF;
 			break;
@@ -259,11 +216,11 @@ int main(int argc, char *args[])
 			break;
 		case 0x6000:;
 			printf("6");
-			registers[(opCode & 0x0F00) >> 8] = opCode & 0x00FF;
+			registers[x] = (opCode & 0x00FF);
 			break;
 		case 0x7000:
 			printf("7");
-			registers[(opCode & 0x0F00) >> 8] += opCode & 0x00FF;
+			registers[x] += opCode & 0x00FF;
 			break;
 		case 0xA000:
 			printf("A");
@@ -271,83 +228,67 @@ int main(int argc, char *args[])
 			break;
 		case 0xD000:;
 			printf("D");
-			continue;
-			unsigned char x = 0;
-			unsigned char y = 0;
-			unsigned char height = 0;
-			unsigned char pixel = 0;
-			x = (opCode & 0x0F00) >> 8;
-			y = (opCode & 0x00F0) >> 4;
-			height = (opCode & 0x000F);
 
-			x = registers[x] % 64;
-			y = registers[y] % 32;
+			/* 
+            Draws a sprite at coordinate (V[x], V[y])
+            that has a width of 8 pixels and a 
+            height of N pixels. Each row of 
+            8 pixels is read as bit-coded starting
+            from memory location I; I value doesn't
+            change after the execution of this instruction.
+            As described above, V[F] is set to 1 
+            if any screen pixels are flipped from set
+            to unset when the sprite is
+            drawn, and to 0 if that doesn't happen.
+            */
+			//continue;
+
+			drawFlag = 1;
+
+			unsigned char height = (opCode & 0x000F);
+			unsigned char pixelValue = 0;
+
+			//x = registers[x] % 64;
+			//y = registers[y] % 32;
 
 			registers[0xF] = 0;
 			for (int yLine = 0; yLine < height; yLine++)
 			{
-				pixel = memory[i + yLine];
-
+				pixelValue = memory[i + yLine];
+				//check bits in pixelValue
 				for (int xLine = 0; xLine < 8; xLine++)
 				{
+					//check if bit in pixelValue is set to 1
+					//if (pixelValue & (0x80 >> xLine) != 0)
+					if ((pixelValue & (0x80 >> xLine)) != 0)
+					{
+						if (display[(registers[x] + xLine + ((registers[y] + yLine) * 64))] == 1)
+						{
+							registers[0xF] = 1;
+						}
+						//int aa = registers[x] + xLine + ((registers[y] + yLine) * 64);
+						display[registers[x] + xLine + ((registers[y] + yLine) * 64)] ^= 1;
+					}
 				}
-
 				continue;
 			}
 
 			break;
 		default:
-			//printf("Not implemented");
+			printf("Not implemented");
 			break;
+		}
+
+		if (drawFlag == 1)
+		{
+			draw(display);
 		}
 
 		Sleep(10);
 	}
 
-	/* 00e0 a22a 600c 6108 d01f 7009 a239 d01f
-a248 7008 d01f 7004 a257 d01f 7008 a266
-d01f 7008 a275 d01f 1228 ff00 ff00 3c00
-3c00 3c00 3c00 ff00 ffff 00ff 0038 003f
-003f 0038 00ff 00ff 8000 e000 e000 8000
-8000 e000 e000 80f8 00fc 003e 003f 003b
-0039 00f8 00f8 0300 0700 0f00 bf00 fb00
-f300 e300 43e0 00e0 0080 0080 0080 0080
-00e0 00e0  */
-
-	//unsigned char test1 = 0;
-
-	//init_cpu();
-
-	//while (1)
-	//{
-	//    test1++;
-	//    printf("Hello world.\n");
-
-	//    if (test1 > 10) {
-	//        break;
-	//    }
-
-	//    Sleep(1000);
-	//}
-
-	//printf("CHAR_BIT    :   %d\n", CHAR_BIT);
-	//printf("CHAR_MAX    :   %d\n", CHAR_MAX);
-	//printf("CHAR_MIN    :   %d\n", CHAR_MIN);
-	//printf("INT_MAX     :   %d\n", INT_MAX);
-	//printf("INT_MIN     :   %d\n", INT_MIN);
-	//printf("LONG_MAX    :   %ld\n", (long)LONG_MAX);
-	//printf("LONG_MIN    :   %ld\n", (long)LONG_MIN);
-	//printf("SCHAR_MAX   :   %d\n", SCHAR_MAX);
-	//printf("SCHAR_MIN   :   %d\n", SCHAR_MIN);
-	//printf("SHRT_MAX    :   %d\n", SHRT_MAX);
-	//printf("SHRT_MIN    :   %d\n", SHRT_MIN);
-	//printf("UCHAR_MAX   :   %d\n", UCHAR_MAX);
-	//printf("UINT_MAX    :   %u\n", (unsigned int)UINT_MAX);
-	//printf("ULONG_MAX   :   %lu\n", (unsigned long)ULONG_MAX);
-	//printf("USHRT_MAX   :   %d\n", (unsigned short)USHRT_MAX);
-
 	printf("EXIT");
 
-	close();
+	closeSDL();
 	return 0;
 }
