@@ -15,7 +15,6 @@
 #include "inc/loadrom.h"
 #include <SDL.h>
 
-
 //The window we'll be rendering to
 SDL_Window *window = NULL;
 
@@ -126,6 +125,7 @@ int main(int argc, char *args[])
 	{
 		return 0;
 	}
+	
 
 	unsigned short opCode = 0;
 
@@ -134,6 +134,7 @@ int main(int argc, char *args[])
 
 	unsigned char registers[REGISTER_SIZE] = {0};
 	unsigned char stack[STACK_SIZE] = {0};
+	unsigned short sp = 0;
 
 	unsigned short i = 0;
 	unsigned short pc = 0;
@@ -173,7 +174,6 @@ int main(int argc, char *args[])
 			}
 		}
 
-
 		drawFlag = 0;
 
 		//Each opcode is 2 bytes. Read 2 bytes from memory and combine
@@ -199,11 +199,21 @@ int main(int argc, char *args[])
 		switch (opCode & 0xF000)
 		{
 		case 0x0000:
-			if (opCode == 0x0E0)
+			if (opCode == 0x00E0)
 			{
 				drawFlag = 1;
 				printf("reset_display");
 				reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
+			}
+			else if (opCode == 0x00EE)
+			{
+				pc = stack[sp];
+				sp -= 1;
+			}
+			else
+			{
+				//0nnn
+				//do nothing
 			}
 
 			break;
@@ -213,6 +223,27 @@ int main(int argc, char *args[])
 			break;
 		case 0x2000:
 			printf("2");
+			sp += 1;
+			stack[sp] = pc;
+			pc = (opCode & 0x0FFF);
+			break;
+		case 0x3000:
+			if (registers[x] == (opCode & 0x00FF))
+			{
+				pc += 2;
+			}
+			break;
+		case 0x4000:
+			if (registers[x] != (opCode & 0x00FF))
+			{
+				pc += 2;
+			}
+			break;
+		case 0x5000:
+			if (registers[x] == registers[y])
+			{
+				pc += 2;
+			}
 			break;
 		case 0x6000:;
 			printf("6");
@@ -221,6 +252,52 @@ int main(int argc, char *args[])
 		case 0x7000:
 			printf("7");
 			registers[x] += opCode & 0x00FF;
+			break;
+		case 0x8000:
+			switch ((opCode & 0x000F))
+			{
+			case 0x0:
+				registers[x] = registers[y];
+				break;
+			case 0x1:
+				registers[x] |= registers[y];
+				break;
+			case 0x2:
+				registers[x] &= registers[y];
+				break;
+			case 0x3:
+				registers[x] ^= registers[y];
+				break;
+			case 0x4:;
+				unsigned short tmpA = registers[x] + registers[y];
+				registers[0xF] = (tmpA > 255) ? 1 : 0;
+				registers[x] = (tmpA & 0x00FF);
+				break;
+			case 0x5:
+				registers[0xF] = (registers[x] > registers[y]) ? 1 : 0;
+				registers[x] -= registers[y];
+				break;
+			case 0x6:
+				registers[0xF] = (registers[x] & 0x01) ? 1 : 0;
+				registers[x] >>= 1;
+				break;
+			case 0x7:
+				registers[0xF] = (registers[y] > registers[x]) ? 1 : 0;
+				registers[x] -= registers[y];
+				break;
+			case 0xE:
+				registers[0xF] = (registers[x] & 0x80) ? 1 : 0;
+				registers[x] <<= 1;
+				break;
+			default:
+				break;
+			}
+			break;
+		case 0x9000:
+			if (registers[x] != registers[y])
+			{
+				pc += 2;
+			}
 			break;
 		case 0xA000:
 			printf("A");
