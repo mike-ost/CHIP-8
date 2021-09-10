@@ -9,7 +9,12 @@ void load_rom(unsigned char *memory)
     //printf("%d\n", STACK_SIZE);
     //Read rom
     FILE *fptr;
-    errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\ibm.ch8", "rb");
+    //errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\ibm.ch8", "rb");
+    //errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\Pong (alt).ch8", "rb");
+    //errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\Chip8 emulator Logo [Garstyciuks].ch8", "rb");
+    //errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\breakout.ch8", "rb");
+    // err = fopen_s(&fptr, "C:\\temp\\roms\\jason.ch8", "rb");
+    errno_t err = fopen_s(&fptr, "C:\\temp\\roms\\test_opcode.ch8", "rb");
 
     if (err || fptr == NULL)
     {
