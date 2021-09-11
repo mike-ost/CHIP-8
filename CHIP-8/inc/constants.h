@@ -15,7 +15,7 @@ struct CPU
 {
 	unsigned short opCode;
 	unsigned char registers[REGISTER_SIZE];
-	unsigned char stack[STACK_SIZE];
+	unsigned short stack[STACK_SIZE];
 	unsigned short sp;
 	unsigned short i;
 	unsigned short pc;

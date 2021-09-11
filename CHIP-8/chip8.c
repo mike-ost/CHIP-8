@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
-#include <sys/stat.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -16,46 +16,25 @@
 #include "inc/sdl.h"
 #include <SDL.h>
 
-/* struct CPU
-{
-	unsigned short opCode;
-	unsigned char registers[REGISTER_SIZE];
-	unsigned char stack[STACK_SIZE];
-	unsigned short sp;
-	unsigned short i;
-	unsigned short pc;
-	unsigned char delayTimer;
-	unsigned char soundTimer;
-	unsigned char drawFlag;
-}; */
 
-/* void test0(struct CPU *cpu)
-{
-	cpu->opCode = 0;
-	cpu->sp = 0;
-	cpu->i = 0;
-	cpu->pc = 0;
-	cpu->delayTimer = 0;
-	cpu->soundTimer = 0;
-	cpu->drawFlag = 0;
-
-	int a = sizeof(cpu->registers);
-
-	for (int x = 0; x < sizeof(cpu->registers); x++)
-	{
-		cpu->registers[x] = 0;
-	}
-
-	for (int x = 0; x < sizeof(cpu->stack); x++)
-	{
-		cpu->stack[x] = 0;
-	}
-	
+/* void testA(int *a, int *b, int *c) {
+	*a = 2;
+	*b = 3;
+	c +=4;
+	*c = 4;
 } */
+
 
 int main(int argc, char *args[])
 {
 
+
+/* 	int a = 1;
+	int b = 1;
+	int c[5] = {0,0,0,0,0};
+
+	testA(&a, &b, c);
+ */
 	//if (argc != 2) {
 	//load IBM demo
 
@@ -68,14 +47,11 @@ int main(int argc, char *args[])
 		return 0;
 	}
 
-	struct CPU cpu = init_cpu();
-	//cpu_test(&cpu);
+	//Seed random number generator with timestamp
+	srand((unsigned int)time(NULL));
 
-	/* 	struct CPU cpu;
+	//struct CPU cpu = init_cpu();
 
-	test0(&cpu);
-
-	cpu.soundTimer = 0; */
 
 	//opcode
 	unsigned short opCode = 0;
@@ -86,7 +62,7 @@ int main(int argc, char *args[])
 	//CPU registers
 	unsigned char registers[REGISTER_SIZE] = {0};
 	//stack
-	unsigned char stack[STACK_SIZE] = {0};
+	unsigned short stack[STACK_SIZE] = {0};
 	//stack pointer
 	unsigned short sp = 0;
 
@@ -140,7 +116,7 @@ int main(int argc, char *args[])
 		drawFlag = 0;
 
 		//Each opcode is 2 bytes. Read 2 bytes from memory and combine
-		opCode = (memory[pc] << 8) | memory[pc + 1]; //41514
+		opCode = (memory[pc] << 8) | memory[(pc + 1)]; //41514
 													 //opCode = (byte0 << 8); //41514
 
 		// Vx register, we are basically "grabbing" the x present in some
@@ -154,10 +130,6 @@ int main(int argc, char *args[])
 		//Iterate program counter
 		pc += 2;
 
-		if (pc > 4094)
-		{
-			pc = ADDRESS_ROM_START;
-		}
 
 		switch (opCode & 0xF000)
 		{
@@ -166,8 +138,6 @@ int main(int argc, char *args[])
 			switch (opCode & 0x00FF)
 			{
 			case 0x00E0:
-				//drawFlag = 1;
-				printf("reset_display");
 				reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
 				break;
 			case 0x00EE:
@@ -179,31 +149,11 @@ int main(int argc, char *args[])
 				//printf("Invalid opcode");
 				break;
 			}
-
-			/* 			if (opCode == 0x00E0)
-			{
-				drawFlag = 1;
-				printf("reset_display");
-				reset_display(display, DISPLAY_HEIGHT * DISPLAY_WIDTH);
-			}
-			else if (opCode == 0x00EE)
-			{
-				pc = stack[sp];
-				sp -= 1;
-			}
-			else
-			{
-				//0nnn
-				//do nothing
-			} */
-
 			break;
 		case 0x1000: // jump to pc
-			//printf("1");
 			pc = (opCode & 0x0FFF);
 			break;
 		case 0x2000:
-			//printf("2");
 			sp++;
 			pc -= 2;
 			stack[sp] = pc;
@@ -228,12 +178,10 @@ int main(int argc, char *args[])
 			}
 			break;
 		case 0x6000:;
-			//printf("6");
 			registers[x] = (opCode & 0x00FF);
 			break;
 		case 0x7000:
-			//printf("7");
-			registers[x] += opCode & 0x00FF;
+			registers[x] += (opCode & 0x00FF);
 			break;
 		case 0x8000:
 			switch (opCode & 0x000F)
@@ -251,7 +199,7 @@ int main(int argc, char *args[])
 				registers[x] ^= registers[y];
 				break;
 			case 0x0004:;
-				registers[0xF] = (registers[x] + registers[y] > 0xFF) ? 1 : 0;
+				registers[0xF] = ((registers[x] + registers[y]) > 0xFF) ? 1 : 0;
 				registers[x] += registers[y];
 				break;
 			case 0x0005:
@@ -264,7 +212,7 @@ int main(int argc, char *args[])
 				break;
 			case 0x0007:
 				registers[0xF] = (registers[y] > registers[x]) ? 1 : 0;
-				registers[x] = registers[y] - registers[x];
+				registers[x] = (registers[y] - registers[x]);
 				break;
 			case 0x000E:
 				//registers[0xF] = (registers[x] & 0x80) ? 1 : 0;
@@ -283,7 +231,6 @@ int main(int argc, char *args[])
 			}
 			break;
 		case 0xA000:
-			//printf("A");
 			i = (opCode & 0x0FFF);
 			break;
 		case 0xB000:
@@ -293,7 +240,6 @@ int main(int argc, char *args[])
 			registers[x] = ((rand() % 256) & (opCode & 0x00FF));
 			break;
 		case 0xD000:;
-			//printf("D");
 
 			/* 
             Draws a sprite at coordinate (V[x], V[y])
@@ -307,20 +253,17 @@ int main(int argc, char *args[])
             to unset when the sprite is
             drawn, and to 0 if that doesn't happen.
             */
-			//continue;
 
 			drawFlag = 1;
 
 			unsigned char height = (opCode & 0x000F);
 			unsigned char pixelValue = 0;
 
-			//x = registers[x] % 64;
-			//y = registers[y] % 32;
 
 			registers[0xF] = 0;
 			for (int yLine = 0; yLine < height; yLine++)
 			{
-				pixelValue = memory[i + yLine];
+				pixelValue = memory[(i + yLine)];
 				//check bits in pixelValue
 				for (int xLine = 0; xLine < 8; xLine++)
 				{
@@ -332,7 +275,6 @@ int main(int argc, char *args[])
 						{
 							registers[0xF] = 1;
 						}
-						//int aa = registers[x] + xLine + ((registers[y] + yLine) * 64);
 						display[registers[x] + xLine + ((registers[y] + yLine) * 64)] ^= 1;
 					}
 				}
@@ -387,27 +329,27 @@ int main(int argc, char *args[])
 				i += registers[x];
 				break;
 			case 0x0029:
-				i = registers[x] * 5;
+				i = (registers[x] * 5);
 				break;
 			case 0x0033:
 				// The interpreter takes the decimal value of V[x],
 				// and places the hundreds digit in memory at location in I,
 				// the tens digit at location I+1, and the ones digit at
 				// location I+2.
-				memory[i] = registers[x] / 100;
-				memory[i + 1] = registers[x] % 100 / 10;
-				memory[i + 2] = registers[x] % 10;
+				memory[i] = (registers[x] / 100);
+				memory[i + 1] = ((registers[x] % 100) / 10);
+				memory[i + 2] = (registers[x] % 10);
 				break;
 			case 0x0055:
 				for (int z = 0; z <= x; z++)
 				{
-					memory[i + z] = registers[z];
+					memory[(i + z)] = registers[z];
 				}
 				break;
 			case 0x0065:
 				for (int z = 0; z <= x; z++)
 				{
-					registers[z] = memory[i + z];
+					registers[z] = memory[(i + z)];
 				}
 				break;
 			default:
