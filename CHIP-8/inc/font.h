@@ -5,6 +5,6 @@
 
 extern const unsigned char fontSet[80];
 
-void load_font(unsigned char *memory);
+extern void load_font(unsigned char *memory);
 
 #endif

@@ -9,19 +9,8 @@
 #define REGISTER_SIZE 0x10
 #define STACK_SIZE 0x10
 #define NUMBER_OF_KEYS 0x10
-//#define RAND_MAX 0xFF
 
-struct CPU
-{
-	unsigned short opCode;
-	unsigned char registers[REGISTER_SIZE];
-	unsigned short stack[STACK_SIZE];
-	unsigned short sp;
-	unsigned short i;
-	unsigned short pc;
-	unsigned char delayTimer;
-	unsigned char soundTimer;
-	unsigned char drawFlag;
-};
+typedef unsigned char byte_t;
+typedef unsigned short num_t;
 
 #endif
