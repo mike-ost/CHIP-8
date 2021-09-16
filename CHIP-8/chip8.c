@@ -47,12 +47,10 @@ unsigned char drawFlag = 0;
 unsigned char quit = 0;
 
 
-
 int main(int argc, char *args[])
 {
 	//Seed random number generator with timestamp
 	srand((unsigned int)time(NULL));
-
 
 	//if (argc != 2) {
 	//load IBM demo
@@ -73,20 +71,10 @@ int main(int argc, char *args[])
 	//Set program counter to start address of the ROM space
 	pc = ADDRESS_ROM_START;
 
-	//SDL event handler
-	SDL_Event e;
-
 	//Main loop
 	while (quit == 0)
 	{
-
-		while (SDL_PollEvent(&e) != 0)
-		{
-			if (e.type == SDL_QUIT)
-			{
-				quit = 1;
-			}
-		}
+		quit = sdl_ehandler(keyPad);
 
 		run_emualtion_cycle();
 
